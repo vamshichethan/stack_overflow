@@ -4,50 +4,53 @@ import question from "../models/question.js";
 export const Askanswer = async (req, res) => {
   const { id: _id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(_id)) {
-    return res.status(400).json({ message: "question unavailable" });
+    return res.status(404).json({ message: "question unavailable" });
   }
-  const { noofanswer, answerbody, useranswered, userid } = req.body;
-  updatenoofanswer(_id, noofanswer);
+  const { answerbody, useranswered, userid } = req.body;
+
+  if (!answerbody) {
+    return res.status(400).json({ message: "Answer body is required" });
+  }
 
   try {
-    const updatequestion = await question.findByIdAndUpdate(_id, {
-      $addToSet: { answer: [{ answerbody, useranswered, userid }] },
-    });
-    res.status(200).json({ data: updatequestion });
+    const updatedQuestion = await question.findByIdAndUpdate(
+      _id,
+      {
+        $push: { answer: { answerbody, useranswered, userid } },
+        $inc: { noofanswer: 1 },
+      },
+      { new: true }
+    );
+    res.status(200).json({ data: updatedQuestion });
   } catch (error) {
-    console.log(error);
-    res.status(500).json("something went wrong..");
-    return;
+    console.error(error);
+    res.status(500).json({ message: "something went wrong.." });
   }
 };
-const updatenoofanswer = async (_id, noofanswer) => {
-  try {
-    await question.findByIdAndUpdate(_id, { $set: { noofanswer: noofanswer } });
-  } catch (error) {
-    console.log(error);
-  }
-};
+
 export const deleteanswer = async (req, res) => {
   const { id: _id } = req.params;
-  const { noofanswer, answerid } = req.body;
+  const { answerid } = req.body;
+
   if (!mongoose.Types.ObjectId.isValid(_id)) {
-    return res.status(400).json({ message: "question unavailable" });
+    return res.status(404).json({ message: "question unavailable" });
   }
   if (!mongoose.Types.ObjectId.isValid(answerid)) {
     return res.status(400).json({ message: "answer unavailable" });
   }
-  updatenoofanswer(_id, noofanswer);
+
   try {
-    const updatequestion = await question.updateOne(
-      { _id },
+    const updatedQuestion = await question.findByIdAndUpdate(
+      _id,
       {
         $pull: { answer: { _id: answerid } },
-      }
+        $inc: { noofanswer: -1 },
+      },
+      { new: true }
     );
-    res.status(200).json({ data: updatequestion });
+    res.status(200).json({ data: updatedQuestion });
   } catch (error) {
-    console.log(error);
-    res.status(500).json("something went wrong..");
-    return;
+    console.error(error);
+    res.status(500).json({ message: "something went wrong.." });
   }
 };

@@ -13,12 +13,21 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/lib/AuthContext";
 import { useState } from "react";
 import { useRouter } from "next/router";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
+
+const PHONE_REGEX = /^\+?\d{7,15}$/;
 
 export default function SignUpPage() {
   const router = useRouter();
   const { Signup, loading } = useAuth();
-  const [form, setform] = useState({ name: "", email: "", password: "" });
+  const { t } = useTranslation();
+  const [form, setform] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+  });
   const handleChange = (e: any) => {
     setform({ ...form, [e.target.id]: e.target.value });
   };
@@ -26,6 +35,13 @@ export default function SignUpPage() {
     e.preventDefault();
     if (!form.name || !form.email || !form.password) {
       toast.error("ALL Fields are required");
+      return;
+    }
+    if (
+      form.phone.trim() &&
+      !PHONE_REGEX.test(form.phone.trim().replace(/[\s().-]/g, ""))
+    ) {
+      toast.error("Please enter a valid phone number");
       return;
     }
     try {
@@ -54,10 +70,10 @@ export default function SignUpPage() {
           <Card>
             <CardHeader className="space-y-1 text-center">
               <CardTitle className="text-xl lg:text-2xl">
-                Create your account
+                {t("signup.title")}
               </CardTitle>
               <CardDescription>
-                Join the Stack Overflow community
+                {t("signup.description")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -117,7 +133,7 @@ export default function SignUpPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm">
-                  Display name
+                  {t("signup.displayName")}
                 </Label>
                 <Input
                   id="name"
@@ -128,7 +144,7 @@ export default function SignUpPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm">
-                  Email
+                  {t("auth.email")}
                 </Label>
                 <Input
                   id="email"
@@ -139,8 +155,20 @@ export default function SignUpPage() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="phone" className="text-sm">
+                  {t("signup.phone")}
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="9876543210"
+                  value={form.phone}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="password" className="text-sm">
-                  Password
+                  {t("auth.password")}
                 </Label>
                 <Input
                   id="password"
@@ -149,8 +177,7 @@ export default function SignUpPage() {
                   onChange={handleChange}
                 />
                 <p className="text-xs text-gray-600">
-                  Passwords must contain at least eight characters, including at
-                  least 1 letter and 1 number.
+                  {t("signup.passwordHelp")}
                 </p>
               </div>
 
@@ -172,13 +199,13 @@ export default function SignUpPage() {
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-sm"
               >
-                {loading ? "Signing up.." : "Sign up"}
+                {loading ? t("common.loading") : t("auth.signUp")}
               </Button>
 
               <div className="text-center text-sm">
-                Already have an account?{" "}
-                <Link href="/login" className="text-blue-600 hover:underline">
-                  Log in
+                {t("signup.alreadyAccount")}{" "}
+                <Link href="/auth" className="text-blue-600 hover:underline">
+                  {t("common.login")}
                 </Link>
               </div>
             </CardContent>

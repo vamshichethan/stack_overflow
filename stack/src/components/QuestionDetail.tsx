@@ -320,24 +320,13 @@ const QuestionDetail = ({ questionId }: any) => {
       const res = await axiosInstance.post(
         `/answer/postanswer/${question?._id}`,
         {
-          noofanswer: question.noofanswer,
           answerbody: newanswer,
           useranswered: user.name,
           userid: user._id,
         }
       );
       if (res.data.data) {
-        const newObj = {
-          answerbody: newanswer,
-          useranswered: user.name,
-          userid: user._id,
-          answeredon: new Date().toISOString(),
-        };
-        setquestion((prev: any) => ({
-          ...prev,
-          noofanswer: prev.noofanswer + 1,
-          answer: [...(prev.answer || []), newObj],
-        }));
+        setquestion(res.data.data);
         toast.success("Answer Uploaded");
       }
     } catch (error) {
@@ -380,19 +369,11 @@ const QuestionDetail = ({ questionId }: any) => {
     try {
       const res = await axiosInstance.delete(`/answer/delete/${question._id}`, {
         data: {
-          noofanswer: question.noofanswer,
           answerid: id,
         },
       });
       if (res.data.data) {
-        const updateanswer = question.answer.filter(
-          (ans: any) => ans._id !== id
-        );
-        setquestion((prev: any) => ({
-          ...prev,
-          noofanswer: updateanswer.length,
-          answer: updateanswer,
-        }));
+        setquestion(res.data.data);
         toast.success("deleted successfully");
       }
     } catch (error) {

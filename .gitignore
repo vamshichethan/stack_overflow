@@ -27,4 +27,5 @@ logs
 
 # Server artifacts
 server/node_modules/
+server/uploads/
 stack/node_modules/

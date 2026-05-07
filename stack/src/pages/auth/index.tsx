@@ -12,11 +12,13 @@ import { useAuth } from "@/lib/AuthContext";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 
 const index = () => {
   const router = useRouter();
   const { Login, loading } = useAuth();
+  const { t } = useTranslation();
   const [form, setform] = useState({ email: "", password: "" });
   const handleChange = (e: any) => {
     setform({ ...form, [e.target.id]: e.target.value });
@@ -53,10 +55,10 @@ const index = () => {
           <Card>
             <CardHeader className="space-y-1 text-center">
               <CardTitle className="text-xl lg:text-2xl">
-                Log in to your account
+                {t("auth.loginTitle")}
               </CardTitle>
               <CardDescription>
-                Enter your email and password to access Stack Overflow
+                {t("auth.loginDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -114,7 +116,7 @@ const index = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm">
-                  Email
+                  {t("auth.email")}
                 </Label>
                 <Input
                   id="email"
@@ -126,7 +128,7 @@ const index = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-sm">
-                  Password
+                  {t("auth.password")}
                 </Label>
                 <Input
                   id="password"
@@ -139,17 +141,20 @@ const index = () => {
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-sm"
               >
-                {loading ? "loading" : "Log in"}
+                {loading ? t("common.loading") : t("common.login")}
               </Button>
               <div className="text-center text-sm">
-                <Link href="#" className="text-blue-600 hover:underline">
-                  Forgot your password?
+                <Link
+                  href="/forgot-password"
+                  className="text-blue-600 hover:underline"
+                >
+                  {t("auth.forgotPassword")}
                 </Link>
               </div>
               <div className="text-center text-sm">
-                Don't have an account?{" "}
+                {t("auth.noAccount")}{" "}
                 <Link href="/signup" className="text-blue-600 hover:underline">
-                  Sign up
+                  {t("auth.signUp")}
                 </Link>
               </div>
             </CardContent>

@@ -2,26 +2,52 @@ import mongoose from "mongoose";
 import user from "../models/auth.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+
+const PHONE_REGEX = /^\+?\d{7,15}$/;
+const normalizePhone = (value) => value.replace(/[\s().-]/g, "");
+
 export const Signup = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, phone } = req.body;
+  const phoneInput =
+    typeof phone === "string" && phone.trim()
+      ? normalizePhone(phone.trim())
+      : "";
+
+  if (phoneInput && !PHONE_REGEX.test(phoneInput)) {
+    return res.status(400).json({ message: "Invalid phone number" });
+  }
+
   try {
     const exisitinguser = await user.findOne({ email });
     if (exisitinguser) {
       return res.status(404).json({ message: "User already exist" });
     }
-    const token = jwt.sign(
-      { email: newuser.email, id: newuser._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+
+    if (phoneInput) {
+      const existingPhoneUser = await user.findOne({ phone: phoneInput });
+
+      if (existingPhoneUser) {
+        return res
+          .status(409)
+          .json({ message: "Phone number already registered" });
+      }
+    }
+
     const hashpassword = await bcrypt.hash(password, 12);
     const newuser = await user.create({
       name,
       email,
       password: hashpassword,
+      phone: phoneInput,
     });
+    const token = jwt.sign(
+      { email: newuser.email, id: newuser._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
     res.status(200).json({ data: newuser, token });
   } catch (error) {
+    console.error("Signup Error:", error);
     res.status(500).json("something went wrong..");
     return;
   }

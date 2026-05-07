@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setloading] = useState(false);
   const [error, seterror] = useState(null);
 
-  const Signup = async ({ name, email, password }) => {
+  const Signup = async ({ name, email, password, phone }) => {
     setloading(true);
     seterror(null);
     try {
@@ -24,15 +24,19 @@ export const AuthProvider = ({ children }) => {
         name,
         email,
         password,
+        phone,
       });
       const { data, token } = res.data;
       localStorage.setItem("user", JSON.stringify({...data,token}));
-      setUser(data);
+      setUser({...data, token});
       toast.success("Signup Successful");
     } catch (error) {
-      const msg = error.response?.data.message || "Signup failed";
+      const msg = error.response?.data?.message || "Signup failed";
       seterror(msg);
       toast.error(msg);
+      throw error;
+    } finally {
+      setloading(false);
     }
   };
   const Login = async ({ email, password }) => {
@@ -45,12 +49,15 @@ export const AuthProvider = ({ children }) => {
       });
       const { data, token } = res.data;
       localStorage.setItem("user", JSON.stringify({...data,token}));
-      setUser(data);
+      setUser({...data, token});
       toast.success("Login Successful");
     } catch (error) {
-      const msg = error.response?.data.message || "Login failed";
+      const msg = error.response?.data?.message || "Login failed";
       seterror(msg);
       toast.error(msg);
+      throw error;
+    } finally {
+      setloading(false);
     }
   };
   const Logout = () => {

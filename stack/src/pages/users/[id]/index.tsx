@@ -47,9 +47,9 @@ const index = () => {
   const [loading, setloading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
-    name: users?.name || "",
-    about: users?.about || "",
-    tags: users?.tags || [],
+    name: "",
+    about: "",
+    tags: [] as string[],
   });
   const [newTag, setNewTag] = useState("");
 
@@ -59,6 +59,13 @@ const index = () => {
         const res = await axiosInstance.get("/user/getalluser");
         const matcheduser = res.data.data.find((u: any) => u._id === id);
         setusers(matcheduser);
+        if (matcheduser) {
+          setEditForm({
+            name: matcheduser.name || "",
+            about: matcheduser.about || "",
+            tags: matcheduser.tags || [],
+          });
+        }
       } catch (error) {
         console.log(error);
       } finally {
@@ -271,7 +278,7 @@ const index = () => {
               <div className="flex items-center">
                 <Calendar className="w-4 h-4 mr-1" />
                 Member since{" "}
-                {new Date(users.joinDate).toISOString().split("T")[0]}
+                {users.joinDate ? new Date(users.joinDate).toISOString().split("T")[0] : "N/A"}
               </div>
             </div>
             <div className="flex flex-wrap items-center space-x-6 text-sm">
@@ -315,7 +322,7 @@ const index = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {users.tags.map((tag: string) => (
+                  {(users.tags || []).map((tag: string) => (
                     <div
                       key={tag}
                       className="flex items-center justify-between"

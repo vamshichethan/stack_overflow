@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start":"nodemon index.js"
+    "start": "nodemon index.js"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +19,10 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.18.0",
     "mongoose": "^8.16.5",
-    "nodemon": "^3.1.10"
+    "multer": "^2.1.1",
+    "nodemailer": "^8.0.7",
+    "nodemon": "^3.1.10",
+    "razorpay": "^2.9.6",
+    "twilio": "^6.0.1"
   }
 }

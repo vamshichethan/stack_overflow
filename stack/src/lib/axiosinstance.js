@@ -1,12 +1,16 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: process.env.BACKEND_URL,
+  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 axiosInstance.interceptors.request.use((req) => {
+  if (typeof FormData !== "undefined" && req.data instanceof FormData) {
+    delete req.headers["Content-Type"];
+  }
+
   if (typeof window !== "undefined") {
     const user = localStorage.getItem("user");
     if (user) {
