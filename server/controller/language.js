@@ -5,6 +5,7 @@ import user from "../models/auth.js";
 import { sendTransactionalEmail } from "../utils/email.js";
 
 const OTP_EXPIRY_MINUTES = Number(process.env.LANGUAGE_OTP_EXPIRY_MINUTES || 5);
+const OTP_DELIVERY_MODE = process.env.LANGUAGE_OTP_DELIVERY_MODE || "email";
 const OTP_DIGITS = 6;
 const SUPPORTED_LANGUAGES = {
   en: "English",
@@ -15,6 +16,8 @@ const SUPPORTED_LANGUAGES = {
   fr: "French",
 };
 const EMAIL_LANGUAGE = "fr";
+const EMAIL_ONLY_MODE = "email";
+const ORIGINAL_RULE_MODE = "original";
 const OTP_SENT_MESSAGE = "OTP sent successfully.";
 const INVALID_OTP_MESSAGE = "Invalid or expired OTP.";
 const SUCCESS_MESSAGE = "Language changed successfully.";
@@ -36,6 +39,14 @@ const maskPhone = (phone = "") =>
   phone.length > 4 ? `***${phone.slice(-4)}` : "***";
 
 const getLanguage = (language) => SUPPORTED_LANGUAGES[language] || "";
+
+const getOtpChannel = (selectedLanguage) => {
+  if (OTP_DELIVERY_MODE === ORIGINAL_RULE_MODE) {
+    return selectedLanguage === EMAIL_LANGUAGE ? "email" : "mobile";
+  }
+
+  return EMAIL_ONLY_MODE;
+};
 
 const sendEmailOtp = async ({ toEmail, otp, selectedLanguage }) => {
   const languageName = getLanguage(selectedLanguage);
@@ -126,7 +137,7 @@ export const requestLanguageOtp = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const channel = selectedLanguage === EMAIL_LANGUAGE ? "email" : "mobile";
+    const channel = getOtpChannel(selectedLanguage);
     const otp = getOtp();
     const hashedOtp = await bcrypt.hash(otp, 12);
     const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
@@ -135,7 +146,7 @@ export const requestLanguageOtp = async (req, res) => {
       if (!foundUser.email) {
         return res
           .status(400)
-          .json({ message: "Registered email is required for French OTP." });
+          .json({ message: "Registered email is required for language OTP." });
       }
 
       await sendEmailOtp({
