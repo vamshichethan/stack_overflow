@@ -1,5 +1,45 @@
 import mongoose from "mongoose";
 
+const loginHistorySchema = mongoose.Schema(
+  {
+    browser: { type: String, default: "Unknown" },
+    os: { type: String, default: "Unknown" },
+    device: {
+      type: String,
+      enum: ["desktop", "laptop", "mobile"],
+      default: "desktop",
+    },
+    ipAddress: { type: String, default: "Unknown" },
+    loginAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
+const pointsHistorySchema = mongoose.Schema(
+  {
+    type: {
+      type: String,
+      enum: [
+        "earned_answer",
+        "earned_bonus",
+        "deducted_downvote",
+        "restored_downvote",
+        "deducted_deleted_answer",
+        "transfer_sent",
+        "transfer_received",
+      ],
+      required: true,
+    },
+    points: { type: Number, required: true },
+    description: { type: String, required: true },
+    questionId: { type: mongoose.Schema.Types.ObjectId, ref: "question" },
+    answerId: { type: mongoose.Schema.Types.ObjectId },
+    relatedUser: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const userschema = mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
@@ -27,6 +67,11 @@ const userschema = mongoose.Schema({
     enum: ["email", "mobile", null],
     default: null,
   },
+  loginHistory: { type: [loginHistorySchema], default: [] },
+  pendingLoginOtp: { type: String, default: null, select: false },
+  pendingLoginOtpExpiry: { type: Date, default: null, select: false },
+  points: { type: Number, default: 0, min: 0 },
+  pointsHistory: { type: [pointsHistorySchema], default: [] },
   subscription: {
     plan: { type: String, default: "Free" }, // Free, Bronze, Silver, Gold
     startDate: { type: Date },

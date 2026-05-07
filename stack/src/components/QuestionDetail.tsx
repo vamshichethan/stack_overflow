@@ -308,6 +308,28 @@ const QuestionDetail = ({ questionId }: any) => {
   const handlebookmark = () => {
     setquestion((prev: any) => ({ ...prev, isBookmarked: !prev.isBookmarked }));
   };
+  const handleAnswerVote = async (answerid: string, vote: string) => {
+    if (!user) {
+      toast.info("Please login to continue");
+      router.push("/auth");
+      return;
+    }
+
+    try {
+      const res = await axiosInstance.patch(`/answer/vote/${question._id}`, {
+        answerid,
+        value: vote,
+      });
+
+      if (res.data.data) {
+        setquestion(res.data.data);
+        toast.success("Vote Updated");
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Failed to vote answer");
+    }
+  };
   const handleSubmitanswer = async () => {
     if(!user){
       toast.info("Please login to continue")
@@ -321,8 +343,6 @@ const QuestionDetail = ({ questionId }: any) => {
         `/answer/postanswer/${question?._id}`,
         {
           answerbody: newanswer,
-          useranswered: user.name,
-          userid: user._id,
         }
       );
       if (res.data.data) {
@@ -552,6 +572,27 @@ const QuestionDetail = ({ questionId }: any) => {
             <Card key={ans._id} className={""}>
               <CardContent className="p-0">
                 <div className="flex flex-col sm:flex-row">
+                  <div className="flex sm:flex-col items-center sm:items-center p-4 sm:p-6 border-b sm:border-b-0 sm:border-r border-gray-200">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-2 text-gray-600 hover:text-orange-500"
+                      onClick={() => handleAnswerVote(ans._id, "upvote")}
+                    >
+                      <ChevronUp className="w-6 h-6" />
+                    </Button>
+                    <span>
+                      {(ans.upvote?.length || 0) - (ans.downvote?.length || 0)}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-2 text-gray-600 hover:text-orange-500"
+                      onClick={() => handleAnswerVote(ans._id, "downvote")}
+                    >
+                      <ChevronDown className="w-6 h-6" />
+                    </Button>
+                  </div>
                   {/* Answer Content */}
                   <div className="flex-1 p-4 sm:p-6">
                     <div className="prose max-w-none mb-6">
