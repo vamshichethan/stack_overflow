@@ -2,9 +2,9 @@ import mongoose from "mongoose";
 import user from "../models/auth.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
 import { randomInt } from "crypto";
 import { UAParser } from "ua-parser-js";
+import { sendTransactionalEmail } from "../utils/email.js";
 
 const PHONE_REGEX = /^\+?\d{7,15}$/;
 const normalizePhone = (value) => value.replace(/[\s().-]/g, "");
@@ -168,51 +168,8 @@ const enforceMobileLoginWindow = (requestEnvironment, res) => {
   return true;
 };
 
-const getMailConfig = () => {
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER;
-  const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
-  const smtpSecure = process.env.SMTP_SECURE === "true";
-  const smtpPort = Number(process.env.SMTP_PORT || (smtpSecure ? 465 : 587));
-  const from = process.env.SMTP_FROM || process.env.EMAIL_FROM || smtpUser;
-
-  if (!smtpUser || !smtpPass || !from) {
-    throw new Error("Login OTP email credentials are not configured.");
-  }
-
-  if (smtpHost) {
-    return {
-      from,
-      transport: {
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpSecure,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-      },
-    };
-  }
-
-  return {
-    from,
-    transport: {
-      service: process.env.EMAIL_SERVICE || "gmail",
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-    },
-  };
-};
-
 const sendLoginOtpEmail = async ({ toEmail, otp }) => {
-  const mailConfig = getMailConfig();
-  const transporter = nodemailer.createTransport(mailConfig.transport);
-
-  await transporter.sendMail({
-    from: mailConfig.from,
+  await sendTransactionalEmail({
     to: toEmail,
     subject: "Chrome login verification OTP",
     text: [
@@ -230,6 +187,7 @@ const sendLoginOtpEmail = async ({ toEmail, otp }) => {
         <p style="margin-top:20px;">This OTP expires in ${LOGIN_OTP_EXPIRY_MINUTES} minutes.</p>
       </div>
     `,
+    context: "Login OTP",
   });
 };
 

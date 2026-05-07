@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { randomInt } from "crypto";
-import nodemailer from "nodemailer";
 import user from "../models/auth.js";
+import { sendTransactionalEmail } from "../utils/email.js";
 
 const PASSWORD_LENGTH = 10;
 const PASSWORD_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -98,57 +98,15 @@ const buildUserQuery = (type, value) => {
   return { phone: { $in: candidates } };
 };
 
-const getMailConfig = () => {
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER;
-  const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
-  const smtpSecure = process.env.SMTP_SECURE === "true";
-  const smtpPort = Number(process.env.SMTP_PORT || (smtpSecure ? 465 : 587));
-  const from = process.env.SMTP_FROM || process.env.EMAIL_FROM || smtpUser;
-
-  if (!smtpUser || !smtpPass || !from) {
-    throw new Error("Password reset email credentials are not configured.");
-  }
-
-  if (smtpHost) {
-    return {
-      from,
-      transport: {
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpSecure,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-      },
-    };
-  }
-
-  return {
-    from,
-    transport: {
-      service: process.env.EMAIL_SERVICE || "gmail",
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-    },
-  };
-};
-
 const sendPasswordEmail = async ({
   toEmail,
   userName,
   newPassword,
-  mailConfig,
 }) => {
-  const transporter = nodemailer.createTransport(mailConfig.transport);
   const safeName = escapeHtml(userName || "there");
   const safePassword = escapeHtml(newPassword);
 
-  await transporter.sendMail({
-    from: mailConfig.from,
+  await sendTransactionalEmail({
     to: toEmail,
     subject: "Your new Stack Overflow Clone password",
     text: [
@@ -172,6 +130,7 @@ const sendPasswordEmail = async ({
         <p style="color:#6a737c;font-size:12px;margin-top:24px;">If you did not request this reset, contact support immediately.</p>
       </div>
     `,
+    context: "Password reset",
   });
 };
 
@@ -243,18 +202,6 @@ export const forgotPassword = async (req, res) => {
       return res.status(429).json({ message: LIMIT_MESSAGE });
     }
 
-    let mailConfig;
-
-    try {
-      mailConfig = getMailConfig();
-    } catch (configError) {
-      console.error("Forgot Password Email Config Error:", configError.message);
-      return res.status(500).json({
-        message:
-          "Password reset email is not configured. Please contact support.",
-      });
-    }
-
     const resetDate = new Date();
     const newPassword = generatePassword();
     const hashedPassword = await bcrypt.hash(newPassword, 12);
@@ -289,7 +236,6 @@ export const forgotPassword = async (req, res) => {
         toEmail: foundUser.email,
         userName: foundUser.name,
         newPassword,
-        mailConfig,
       });
     } catch (emailError) {
       console.error("Forgot Password Email Error:", emailError);

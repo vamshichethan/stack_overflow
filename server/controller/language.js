@@ -1,8 +1,8 @@
 import bcrypt from "bcryptjs";
 import { randomInt } from "crypto";
-import nodemailer from "nodemailer";
 import twilio from "twilio";
 import user from "../models/auth.js";
+import { sendTransactionalEmail } from "../utils/email.js";
 
 const OTP_EXPIRY_MINUTES = Number(process.env.LANGUAGE_OTP_EXPIRY_MINUTES || 5);
 const OTP_DIGITS = 6;
@@ -37,52 +37,10 @@ const maskPhone = (phone = "") =>
 
 const getLanguage = (language) => SUPPORTED_LANGUAGES[language] || "";
 
-const getMailConfig = () => {
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER;
-  const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
-  const smtpSecure = process.env.SMTP_SECURE === "true";
-  const smtpPort = Number(process.env.SMTP_PORT || (smtpSecure ? 465 : 587));
-  const from = process.env.SMTP_FROM || process.env.EMAIL_FROM || smtpUser;
-
-  if (!smtpUser || !smtpPass || !from) {
-    throw new Error("Language OTP email credentials are not configured.");
-  }
-
-  if (smtpHost) {
-    return {
-      from,
-      transport: {
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpSecure,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-      },
-    };
-  }
-
-  return {
-    from,
-    transport: {
-      service: process.env.EMAIL_SERVICE || "gmail",
-      auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-    },
-  };
-};
-
 const sendEmailOtp = async ({ toEmail, otp, selectedLanguage }) => {
-  const mailConfig = getMailConfig();
-  const transporter = nodemailer.createTransport(mailConfig.transport);
   const languageName = getLanguage(selectedLanguage);
 
-  await transporter.sendMail({
-    from: mailConfig.from,
+  await sendTransactionalEmail({
     to: toEmail,
     subject: "Language change verification OTP",
     text: [
@@ -100,6 +58,7 @@ const sendEmailOtp = async ({ toEmail, otp, selectedLanguage }) => {
         <p style="margin-top:20px;">This OTP expires in ${OTP_EXPIRY_MINUTES} minutes.</p>
       </div>
     `,
+    context: "Language OTP",
   });
 };
 
